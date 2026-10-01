@@ -1,0 +1,202 @@
+<svg viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="darkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e27;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1f3a;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="cyberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00ccff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff006e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffbe0b;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <filter id="shadowGlow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="400" fill="url(#darkGrad)"/>
+  
+  <!-- Grid background -->
+  <g opacity="0.15" stroke="#00ff88" stroke-width="1">
+    <line x1="0" y1="50" x2="1200" y2="50"/>
+    <line x1="0" y1="100" x2="1200" y2="100"/>
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="200" x2="1200" y2="200"/>
+    <line x1="0" y1="250" x2="1200" y2="250"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/>
+    <line x1="0" y1="350" x2="1200" y2="350"/>
+    <line x1="150" y1="0" x2="150" y2="400"/>
+    <line x1="300" y1="0" x2="300" y2="400"/>
+    <line x1="450" y1="0" x2="450" y2="400"/>
+    <line x1="600" y1="0" x2="600" y2="400"/>
+    <line x1="750" y1="0" x2="750" y2="400"/>
+    <line x1="900" y1="0" x2="900" y2="400"/>
+    <line x1="1050" y1="0" x2="1050" y2="400"/>
+  </g>
+  
+  <!-- Linux Penguin (Left side) - 3D styled -->
+  <g transform="translate(120, 200)">
+    <!-- Penguin body shadow -->
+    <ellipse cx="0" cy="0" rx="45" ry="60" fill="#000" opacity="0.3" filter="url(#shadowGlow)"/>
+    
+    <!-- Penguin main body -->
+    <ellipse cx="0" cy="0" rx="40" ry="55" fill="#1a1a1a" stroke="#00ff88" stroke-width="2"/>
+    
+    <!-- Penguin belly (white) -->
+    <ellipse cx="0" cy="5" rx="25" ry="40" fill="#ffffff"/>
+    
+    <!-- Penguin head -->
+    <circle cx="0" cy="-45" r="25" fill="#1a1a1a" stroke="#00ff88" stroke-width="2"/>
+    
+    <!-- Penguin left eye -->
+    <circle cx="-10" cy="-50" r="5" fill="#ffffff"/>
+    <circle cx="-10" cy="-50" r="3" fill="#000"/>
+    
+    <!-- Penguin right eye -->
+    <circle cx="10" cy="-50" r="5" fill="#ffffff"/>
+    <circle cx="10" cy="-50" r="3" fill="#000"/>
+    
+    <!-- Penguin beak -->
+    <polygon points="0,-42 -8,-38 8,-38" fill="#ffaa00" stroke="#ff8800" stroke-width="1"/>
+    
+    <!-- Penguin left wing -->
+    <ellipse cx="-28" cy="-5" rx="15" ry="35" fill="#1a1a1a" stroke="#00ff88" stroke-width="2" transform="rotate(-25 -28 -5)"/>
+    
+    <!-- Penguin right wing -->
+    <ellipse cx="28" cy="-5" rx="15" ry="35" fill="#1a1a1a" stroke="#00ff88" stroke-width="2" transform="rotate(25 28 -5)"/>
+    
+    <!-- Penguin left foot -->
+    <ellipse cx="-15" cy="55" rx="12" ry="10" fill="#ffaa00" stroke="#ff8800" stroke-width="1.5"/>
+    
+    <!-- Penguin right foot -->
+    <ellipse cx="15" cy="55" rx="12" ry="10" fill="#ffaa00" stroke="#ff8800" stroke-width="1.5"/>
+    
+    <!-- Cyber glow effect -->
+    <circle cx="0" cy="0" r="50" fill="none" stroke="#00ff88" stroke-width="1" opacity="0.3" filter="url(#glow)"/>
+  </g>
+  
+  <!-- Central Logo / Shield (middle) -->
+  <g transform="translate(600, 200)">
+    <!-- Shield background glow -->
+    <path d="M -40 -60 L 40 -60 L 40 0 Q 0 50 0 60 Q 0 50 -40 0 Z" 
+          fill="none" stroke="url(#cyberGrad)" stroke-width="2" filter="url(#glow)" opacity="0.5"/>
+    
+    <!-- Shield main -->
+    <path d="M -35 -55 L 35 -55 L 35 0 Q 0 45 0 55 Q 0 45 -35 0 Z" 
+          fill="#0a0e27" stroke="url(#cyberGrad)" stroke-width="2.5"/>
+    
+    <!-- Shield inner design -->
+    <g opacity="0.8">
+      <!-- Code brackets -->
+      <text x="-8" y="5" font-family="monospace" font-size="24" font-weight="bold" fill="url(#cyberGrad)">&lt;</text>
+      <text x="8" y="5" font-family="monospace" font-size="24" font-weight="bold" fill="url(#cyberGrad)">&gt;</text>
+      
+      <!-- Center circle with network nodes -->
+      <circle cx="0" cy="-10" r="8" fill="none" stroke="url(#cyberGrad)" stroke-width="1.5"/>
+      <circle cx="0" cy="-10" r="3" fill="url(#cyberGrad)"/>
+      
+      <!-- Surrounding nodes -->
+      <circle cx="-12" cy="-10" r="2" fill="url(#cyberGrad)"/>
+      <circle cx="12" cy="-10" r="2" fill="url(#cyberGrad)"/>
+      <circle cx="0" cy="-22" r="2" fill="url(#cyberGrad)"/>
+      <circle cx="0" cy="2" r="2" fill="url(#cyberGrad)"/>
+      
+      <!-- Connection lines -->
+      <line x1="0" y1="-10" x2="-12" y2="-10" stroke="url(#cyberGrad)" stroke-width="1" opacity="0.6"/>
+      <line x1="0" y1="-10" x2="12" y2="-10" stroke="url(#cyberGrad)" stroke-width="1" opacity="0.6"/>
+      <line x1="0" y1="-10" x2="0" y2="-22" stroke="url(#cyberGrad)" stroke-width="1" opacity="0.6"/>
+      <line x1="0" y1="-10" x2="0" y2="2" stroke="url(#cyberGrad)" stroke-width="1" opacity="0.6"/>
+    </g>
+    
+    <!-- Shield accent lines -->
+    <line x1="-20" y1="20" x2="20" y2="20" stroke="url(#accentGrad)" stroke-width="1.5" opacity="0.6"/>
+  </g>
+  
+  <!-- PAREEK Text (Left of center) -->
+  <text x="320" y="160" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="#ffffff" letter-spacing="2">
+    PAREEK
+  </text>
+  
+  <!-- Subtext -->
+  <text x="320" y="195" font-family="Arial, sans-serif" font-size="16" font-weight="300" fill="#00ff88" letter-spacing="1">
+    AI RED TEAM
+  </text>
+  
+  <!-- Accent line under text -->
+  <line x1="320" y1="210" x2="620" y2="210" stroke="url(#accentGrad)" stroke-width="2"/>
+  
+  <!-- Right side: Cyber Academy branding -->
+  <g transform="translate(950, 140)">
+    <!-- Academy badge background -->
+    <circle cx="0" cy="0" r="70" fill="none" stroke="url(#cyberGrad)" stroke-width="2" opacity="0.7"/>
+    <circle cx="0" cy="0" r="65" fill="none" stroke="url(#cyberGrad)" stroke-width="0.5" opacity="0.4"/>
+    
+    <!-- Inner circle -->
+    <circle cx="0" cy="0" r="55" fill="#0a0e27" opacity="0.8"/>
+    
+    <!-- "CYBER" text arc -->
+    <defs>
+      <path id="topArc" d="M -50,0 A 50,50 0 0,1 50,0" fill="none"/>
+    </defs>
+    <text font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#ffbe0b" letter-spacing="1.5">
+      <textPath href="#topArc" startOffset="50%" text-anchor="middle">
+        CYBER ACADEMY
+      </textPath>
+    </text>
+    
+    <!-- Center icon - circuit paths -->
+    <g opacity="0.8">
+      <circle cx="0" cy="-8" r="4" fill="url(#cyberGrad)"/>
+      <circle cx="-12" cy="8" r="4" fill="url(#cyberGrad)"/>
+      <circle cx="12" cy="8" r="4" fill="url(#cyberGrad)"/>
+      
+      <line x1="0" y1="-8" x2="-12" y2="8" stroke="url(#cyberGrad)" stroke-width="1" opacity="0.7"/>
+      <line x1="0" y1="-8" x2="12" y2="8" stroke="url(#cyberGrad)" stroke-width="1" opacity="0.7"/>
+      <line x1="-12" y1="8" x2="12" y2="8" stroke="url(#cyberGrad)" stroke-width="1" opacity="0.7"/>
+    </g>
+  </g>
+  
+  <!-- Right side: Version and tagline -->
+  <text x="750" y="320" font-family="Arial, sans-serif" font-size="13" font-weight="300" fill="#00ccff" letter-spacing="0.5">
+    VERSION 1.0 | AUTHORIZED SECURITY RESEARCH
+  </text>
+  
+  <!-- Animated circuit lines (static representation) -->
+  <g opacity="0.2" stroke="#00ff88" stroke-width="1">
+    <!-- Left circuit -->
+    <path d="M 100 100 L 150 150 L 100 200" fill="none"/>
+    <circle cx="100" cy="100" r="2" fill="#00ff88"/>
+    <circle cx="150" cy="150" r="2" fill="#00ff88"/>
+    <circle cx="100" cy="200" r="2" fill="#00ff88"/>
+    
+    <!-- Right circuit -->
+    <path d="M 1000 100 L 950 150 L 1000 200" fill="none"/>
+    <circle cx="1000" cy="100" r="2" fill="#00ff88"/>
+    <circle cx="950" cy="150" r="2" fill="#00ff88"/>
+    <circle cx="1000" cy="200" r="2" fill="#00ff88"/>
+  </g>
+  
+  <!-- Bottom accent bar -->
+  <rect x="0" y="380" width="1200" height="20" fill="url(#accentGrad)" opacity="0.3"/>
+  <line x1="0" y1="380" x2="1200" y2="380" stroke="url(#cyberGrad)" stroke-width="2"/>
+</svg>
