@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from urllib.parse import urlparse
+from ipaddress import ip_address, ip_network
+from typing import Iterable
+
+
+@dataclass(frozen=True)
+class ScopeDecision:
+    allowed: bool
+    normalized_target: str
+    reason: str = ""
+    matched_rule: str | None = None
+
+
+@dataclass
+class ScopeRule:
+    domain: str
+    allowed_ports: set[int] = field(default_factory=set)
+    allow_subdomains: bool = True
+    excluded_hosts: set[str] = field(default_factory=set)
+
+    def matches(self, host: str, port: int | None = None) -> bool:
+        hostname = (host or "").lower().strip()
+        if not hostname:
+            return False
+        if hostname == self.domain.lower():
+            return True
+        if self.allow_subdomains and hostname.endswith(f".{self.domain.lower()}"):
+            return True
+        if port is not None and self.allowed_ports and port not in self.allowed_ports:
+            return False
+        return False
+
+
+class ScopeValidator:
+    def __init__(self, allowed_domains: Iterable[str] | None = None, allowed_ports: Iterable[int] | None = None, excluded_hosts: Iterable[str] | None = None):
+        self.allowed_domains = {d.lower().strip() for d in (allowed_domains or []) if d}
+        self.allowed_ports = set(int(p) for p in (allowed_ports or []))
+        self.excluded_hosts = {h.lower().strip() for h in (excluded_hosts or []) if h}
+
+    @staticmethod
+    def normalize_target(target: str) -> str:
+        parsed = urlparse(target if "://" in target else f"https://{target}")
+        host = (parsed.hostname or "").lower().strip()
+        if not host:
+            raise ValueError(f"Unable to normalize target: {target!r}")
+        return host
+
+    def validate_url(self, target_url: str, port: int | None = None) -> ScopeDecision:
+        try:
+            hostname = self.normalize_target(target_url)
+        except ValueError as exc:
+            return ScopeDecision(False, "", str(exc))
+
+        if hostname in self.excluded_hosts or any(hostname.endswith(f".{ex}") for ex in self.excluded_hosts if ex):
+            return ScopeDecision(False, hostname, "Target is excluded from the allowed scope.")
+
+        if not self.allowed_domains:
+            return ScopeDecision(False, hostname, "No authorized domains are configured for this target.")
+
+        domain_match = None
+        for domain in sorted(self.allowed_domains):
+            if hostname == domain:
+                domain_match = domain
+                break
+            if hostname.endswith(f".{domain}"):
+                domain_match = domain
+                break
+
+        if domain_match is None:
+            return ScopeDecision(False, hostname, "Target is outside the configured authorized domain scope.")
+
+        if self.allowed_ports and port is not None and port not in self.allowed_ports:
+            return ScopeDecision(False, hostname, f"Port {port} is not in the allowed target configuration.")
+
+        return ScopeDecision(True, hostname, "Target is within scope.", domain_match)
+
+
+class AuthorizationGate:
+    def __init__(self):
+        self._authorizations: dict[str, dict] = {}
+
+    def register_authorization(self, target_id: str, *, authorized: bool, scope: list[str], excluded: list[str], mode: str = "SAFE", rate_limit: int = 10, request_budget: int = 2500) -> dict:
+        self._authorizations[target_id] = {
+            "authorized": bool(authorized),
+            "scope": [s.lower().strip() for s in scope if s],
+            "excluded": [e.lower().strip() for e in excluded if e],
+            "mode": mode.upper(),
+            "rate_limit": int(rate_limit),
+            "request_budget": int(request_budget),
+        }
+        return self._authorizations[target_id]
+
+    def validate_target(self, target_id: str, target_url: str, *, port: int | None = None) -> ScopeDecision:
+        auth = self._authorizations.get(target_id)
+        if auth is None:
+            return ScopeDecision(False, "", "Authorization record not found for the target.")
+
+        if not auth["authorized"]:
+            return ScopeDecision(False, self._normalize_target_or_empty(target_url), "Target is not explicitly authorized for scanning.")
+
+        validator = ScopeValidator(auth["scope"], allowed_ports=[], excluded_hosts=auth["excluded"])
+        decision = validator.validate_url(target_url, port=port)
+        if not decision.allowed:
+            return decision
+
+        if auth["mode"] not in {"SAFE", "STANDARD", "DEEP", "API", "AUTHENTICATED", "FULL_ASSESSMENT"}:
+            return ScopeDecision(False, decision.normalized_target, "Requested scan mode is unsupported for the current target authorization.")
+
+        return decision
+
+    @staticmethod
+    def _normalize_target_or_empty(target_url: str) -> str:
+        try:
+            return ScopeValidator.normalize_target(target_url)
+        except ValueError:
+            return ""
+
