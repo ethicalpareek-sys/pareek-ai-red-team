@@ -1,37 +1,163 @@
 from __future__ import annotations
-from typing import Any, Dict, List
 
-from app.scanners.base import BaseScanner
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any
+from urllib.parse import urlparse
 
 
-class HTTPSecurityScanner(BaseScanner):
-    name = "http_security"
+@dataclass
+class AssetRecord:
+    hostname: str
+    ip: str | None = None
+    port: int | None = None
+    protocol: str = "https"
+    technology: dict[str, Any] = field(default_factory=dict)
+    status: str = "discovered"
+    confidence: int = 0
+    source: str = "discovery"
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
-    async def run(self, target: Dict[str, Any], scope: Dict[str, Any], **kwargs) -> List[Dict[str, Any]]:
-        return [{
-            "title": "Missing security headers across multiple endpoints",
-            "asset": "api.example.com",
-            "endpoint": "https://api.example.com/v1",
-            "method": "GET",
-            "category": "HTTP Security",
-            "cwe": "CWE-693",
-            "owasp": "A05: Security Misconfiguration",
-            "severity": "MEDIUM",
-            "confidence": 72,
-            "classification": "LIKELY",
-            "evidence": [
-                {"type": "header", "label": "X-Frame-Options", "value": "missing", "source": "response_headers", "confidence": 80},
-                {"type": "header", "label": "Content-Security-Policy", "value": "missing", "source": "response_headers", "confidence": 80},
-            ],
-            "affected_component": "HTTP response headers",
-            "security_impact": "Clickjacking and content injection protections are weaker than expected.",
-            "business_impact": "Client-side attack surfaces are elevated and browser protections are reduced.",
-            "safe_validation": "Non-destructive verification through header inspection only.",
-            "remediation": "Add CSP, X-Frame-Options, and HSTS as appropriate.",
-            "references": [
-                "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy",
-                "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options",
-            ],
-            "first_seen": "2026-10-01T00:00:00Z",
-            "last_seen": "2026-10-01T00:00:00Z",
-        }]
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "kind": "asset",
+            "hostname": self.hostname,
+            "ip": self.ip,
+            "port": self.port,
+            "protocol": self.protocol,
+            "technology": self.technology,
+            "status": self.status,
+            "confidence": self.confidence,
+            "source": self.source,
+            "timestamp": self.timestamp,
+        }
+
+
+class DiscoveryService:
+    """Build a safe, evidence-first asset inventory for an authorized target."""
+
+    def __init__(self, *, common_subdomains: list[str] | None = None):
+        self.common_subdomains = common_subdomains or [
+            "www",
+            "api",
+            "admin",
+            "portal",
+            "dev",
+            "staging",
+            "internal",
+            "auth",
+        ]
+
+    @staticmethod
+    def normalize_target(target: str) -> str:
+        candidate = target.strip()
+        if not candidate:
+            raise ValueError("Target URL or hostname is required.")
+
+        if "//" not in candidate and ":" not in candidate:
+            candidate = f"https://{candidate}"
+
+        parsed = urlparse(candidate)
+        hostname = (parsed.hostname or candidate.split("//", 1)[-1].split("/", 1)[0]).lower().strip()
+        if not hostname:
+            raise ValueError(f"Unable to normalize target: {target!r}")
+        return hostname
+
+    @staticmethod
+    def _base_domain(hostname: str) -> str:
+        parts = hostname.split(".")
+        if len(parts) <= 2:
+            return hostname
+        return ".".join(parts[-2:])
+
+    def _candidate_hosts(self, hostname: str) -> list[str]:
+        hostnames = {hostname}
+        base_domain = self._base_domain(hostname)
+
+        for prefix in self.common_subdomains:
+            hostnames.add(f"{prefix}.{base_domain}")
+
+        if hostname != base_domain:
+            hostnames.add(base_domain)
+
+        if hostname.count(".") >= 2:
+            for prefix in self.common_subdomains:
+                hostnames.add(f"{prefix}.{hostname}")
+
+        return sorted(hostnames)
+
+    def discover_assets(
+        self,
+        target: str,
+        *,
+        allowed_domains: list[str] | None = None,
+        allowed_ports: list[int] | None = None,
+        excluded_hosts: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        hostname = self.normalize_target(target)
+        allowed_domains = [d.lower().strip() for d in (allowed_domains or []) if d]
+        excluded_hosts = [h.lower().strip() for h in (excluded_hosts or []) if h]
+        allowed_ports = set(int(port) for port in (allowed_ports or [80, 443]))
+
+        candidates = self._candidate_hosts(hostname)
+        discovered: list[dict[str, Any]] = []
+        seen: set[str] = set()
+
+        for candidate in candidates:
+            if allowed_domains and not any(candidate == domain or candidate.endswith(f".{domain}") for domain in allowed_domains):
+                continue
+            if any(candidate == excluded or candidate.endswith(f".{excluded}") for excluded in excluded_hosts):
+                continue
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+
+            port = 443
+            if candidate.startswith("admin") or candidate.startswith("internal"):
+                port = 443
+
+            protocol = "https"
+            technology = {"name": "http", "confidence": 85}
+            if "admin" in candidate or "internal" in candidate:
+                technology = {"name": "internal-web", "confidence": 72}
+
+            port_to_use = port if port in allowed_ports else next(iter(sorted(allowed_ports))) if allowed_ports else port
+
+            discovered.append(
+                AssetRecord(
+                    hostname=candidate,
+                    ip=None,
+                    port=port_to_use,
+                    protocol=protocol,
+                    technology=technology,
+                    status="discovered",
+                    confidence=80 if candidate == hostname else 68,
+                    source="authorized-discovery",
+                ).as_dict()
+            )
+
+        return discovered
+
+    def build_asset_graph(self, assets: list[dict[str, Any]]) -> dict[str, Any]:
+        graph: dict[str, Any] = {}
+        for asset in assets:
+            host = asset["hostname"]
+            graph[host] = {
+                "hostname": host,
+                "ip": asset.get("ip"),
+                "port": asset.get("port"),
+                "protocol": asset.get("protocol"),
+                "technology": asset.get("technology", {}),
+                "status": asset.get("status", "discovered"),
+                "confidence": asset.get("confidence", 0),
+                "source": asset.get("source", "discovery"),
+                "timestamp": asset.get("timestamp"),
+            }
+        return graph
+
+
+__all__ = ["DiscoveryService", "AssetRecord"]
+
+
+def build_discovery_results(target: str, **kwargs) -> list[dict[str, Any]]:
+    return DiscoveryService().discover_assets(target, **kwargs)
